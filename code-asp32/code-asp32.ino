@@ -1,39 +1,97 @@
-/*********
-  Rui Santos
-  Complete project details at https://randomnerdtutorials.com  
-*********/
+#include <Wire.h>
 
-// Motor A
-int motor1Pin1 = 27; 
-int motor1Pin2 = 26; 
-int enable1Pin = 14; 
+// Motor 1 = Esquerdo
+int motor1Pin1 = 27; //input2 - out4
+int motor1Pin2 = 26; //input1 - out3
+int enable1Pin = 14;
 
-// Setting PWM properties
+// Motor 2 = Direito
+int motor2Pin1 = 15; 
+int motor2Pin2 = 2; 
+int enable2Pin = 4; 
+
+// Propriedade dos PWM
 const int freq = 30000;
-const int pwmChannel = 0;
+const int pwmChannel1 = 0;
+const int pwmChannel2 = 1;
 const int resolution = 8;
-int dutyCycle = 200;
+
+// Inicia com 60% de velocidade
+int dutyCycle = 255; //0 a 255 - 0 = Sem velocidade e 255 = maxima velocidade
+
+//Pinos Sensores
+const int s2Pin = 33; //esquerda
+const int s3Pin = 32; //central
+const int s4Pin = 35; //direita
 
 void setup() {
-  // sets the pins as outputs:
+  // Pinos do motor 1
   pinMode(motor1Pin1, OUTPUT);
   pinMode(motor1Pin2, OUTPUT);
   pinMode(enable1Pin, OUTPUT);
+  // Pinos do motor 2
+  pinMode(motor2Pin1, OUTPUT);
+  pinMode(motor2Pin2, OUTPUT);
+  pinMode(enable2Pin, OUTPUT);
   
-  // configure LED PWM functionalitites
-  ledcSetup(pwmChannel, freq, resolution);
+  // Configura os PWMs
+  ledcSetup(pwmChannel1, freq, resolution);
+  ledcSetup(pwmChannel2, freq, resolution);
   
-  // attach the channel to the GPIO to be controlled
-  ledcAttachPin(enable1Pin, pwmChannel);
-
+  // Anexa o canal de controle dos PWMs
+  ledcAttachPin(enable1Pin, pwmChannel1);
+  ledcAttachPin(enable2Pin, pwmChannel2);
+  //Velocidade da porta serial
   Serial.begin(115200);
+  //Esta função inicializa a biblioteca Wire e se conecta ao barramento I2C como controlador ou periférico
+  Wire.begin();
 
-  // testing
-  Serial.print("Testing DC Motor...");
 }
 
 void loop() {
-  // Move the DC motor forward at maximum speed
+  //Faz a leitura dos sensores
+  int s2 = analogRead(s2Pin);
+  int s3 = analogRead(s3Pin);
+  int s4 = analogRead(s4Pin);
+  
+  //Logica de Direcionamento
+  //esquerda e direita brancos, central preto
+  if(s2 > 0 && s3 == 0 && s4 > 0) {
+    //Mantem os dois motores ligados na constante dutyCycle sem direcionar
+    Serial.printf("\nCentralizado s2 %d, s3 %d, s4 %d",s2,s3,s4);
+    ledcWrite(pwmChannel1, dutyCycle);
+    ledcWrite(pwmChannel2, dutyCycle);
+    digitalWrite(motor1Pin1, LOW);
+    digitalWrite(motor1Pin2, HIGH); 
+
+  }
+  //central e direita brancos, esquerda preto --> direciona para esquerda
+  else if(s2 == 0 && s3 > 0 && s4 > 0){
+    //Para direcionar para esquerda, reduz a velocidade do motor esquerdo
+    Serial.printf("\nEsquerda s2 %d, s3 %d, s4 %d",s2,s3,s4);
+    ledcWrite(pwmChannel1, 0);
+    ledcWrite(pwmChannel2, dutyCycle);
+  }
+  //central e esquerda brancos, direita preto --> direciona para direita
+  else if(s2 == 0 && s3 > 0 && s4 == 0){
+    //Para direcionar para direita, reduz a velocidade do motor direito
+    Serial.printf("\nDireita s2 %d, s3 %d, s4 %d",s2,s3,s4);
+    ledcWrite(pwmChannel1, 0);
+    ledcWrite(pwmChannel2, dutyCycle);
+  }
+  // caso contrario, perdemos a linha e desligamos os motores
+  else {
+    Serial.printf("\nPerdemos a linha s2 %d, s3 %d, s4 %d",s2,s3,s4);
+    digitalWrite(motor1Pin1, LOW);
+    digitalWrite(motor1Pin2, LOW);
+    digitalWrite(motor2Pin1, LOW);
+    digitalWrite(motor2Pin2, LOW);
+  }
+
+}
+
+/*
+// Move the DC motor forward at maximum speed
   Serial.println("Moving Forward");
   digitalWrite(motor1Pin1, LOW);
   digitalWrite(motor1Pin2, HIGH); 
@@ -68,4 +126,5 @@ void loop() {
     delay(500);
   }
   dutyCycle = 200;
-}
+*/
+
