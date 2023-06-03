@@ -1,28 +1,30 @@
 #include <Wire.h>
 
-// Motor 1 = Esquerdo
-int motor1Pin1 = 27; //input2 - out4
-int motor1Pin2 = 26; //input1 - out3
+// Motor 1
+int motor1Pin1 = 27; 
+int motor1Pin2 = 26;
 int enable1Pin = 14;
 
-// Motor 2 = Direito
+// Motor 2
 int motor2Pin1 = 15; 
 int motor2Pin2 = 2; 
 int enable2Pin = 4; 
 
 // Propriedade dos PWM
-const int freq = 30000;
+const int freq = 50000;
 const int pwmChannel1 = 0;
 const int pwmChannel2 = 1;
 const int resolution = 8;
 
-// Inicia com 60% de velocidade
+// velocidade maxima 90%
 int dutyCycle = 255; //0 a 255 - 0 = Sem velocidade e 255 = maxima velocidade
 
 //Pinos Sensores
 const int s2Pin = 33; //esquerda
 const int s3Pin = 32; //central
 const int s4Pin = 35; //direita
+
+int direcao =  0; //0 - central, 1 - esquerda, 2 - direita
 
 void setup() {
   // Pinos do motor 1
@@ -53,7 +55,6 @@ void loop() {
   int s2 = analogRead(s2Pin);
   int s3 = analogRead(s3Pin);
   int s4 = analogRead(s4Pin);
-  
   //Logica de Direcionamento
   //esquerda e direita brancos, central preto
   if(s2 > 0 && s3 == 0 && s4 > 0) {
@@ -61,31 +62,48 @@ void loop() {
     Serial.printf("\nCentralizado s2 %d, s3 %d, s4 %d",s2,s3,s4);
     ledcWrite(pwmChannel1, dutyCycle);
     ledcWrite(pwmChannel2, dutyCycle);
-    digitalWrite(motor1Pin1, LOW);
-    digitalWrite(motor1Pin2, HIGH); 
-
+    digitalWrite(motor1Pin1, HIGH);
+    digitalWrite(motor1Pin2, LOW);
+    digitalWrite(motor2Pin1, HIGH);
+    digitalWrite(motor2Pin2, LOW);
+    direcao = 0;
   }
   //central e direita brancos, esquerda preto --> direciona para esquerda
   else if(s2 == 0 && s3 > 0 && s4 > 0){
     //Para direcionar para esquerda, reduz a velocidade do motor esquerdo
     Serial.printf("\nEsquerda s2 %d, s3 %d, s4 %d",s2,s3,s4);
-    ledcWrite(pwmChannel1, 0);
-    ledcWrite(pwmChannel2, dutyCycle);
+    ledcWrite(pwmChannel1, 70);
+    ledcWrite(pwmChannel2, 255);
+    direcao = 1;
   }
   //central e esquerda brancos, direita preto --> direciona para direita
-  else if(s2 == 0 && s3 > 0 && s4 == 0){
+  else if(s2 > 0 && s3 > 0 && s4 == 0){
     //Para direcionar para direita, reduz a velocidade do motor direito
     Serial.printf("\nDireita s2 %d, s3 %d, s4 %d",s2,s3,s4);
-    ledcWrite(pwmChannel1, 0);
-    ledcWrite(pwmChannel2, dutyCycle);
+    ledcWrite(pwmChannel1, 255);
+    ledcWrite(pwmChannel2, 70);
+    direcao = 2;
   }
   // caso contrario, perdemos a linha e desligamos os motores
   else {
+
+    if (direcao = 0){//central
+      s3 = 4095;
+    }
+    if (direcao = 1){//esquerda
+      s2 = 4905;
+    }
+    if (direcao = 2){//direita
+      s4 = 4095;    
+    }
+    
     Serial.printf("\nPerdemos a linha s2 %d, s3 %d, s4 %d",s2,s3,s4);
-    digitalWrite(motor1Pin1, LOW);
-    digitalWrite(motor1Pin2, LOW);
-    digitalWrite(motor2Pin1, LOW);
-    digitalWrite(motor2Pin2, LOW);
+    //ledcWrite(pwmChannel1, 0);
+    //ledcWrite(pwmChannel2, 0);
+    //digitalWrite(motor1Pin1, LOW);
+    //digitalWrite(motor1Pin2, LOW);
+    //digitalWrite(motor2Pin1, LOW);
+    //digitalWrite(motor2Pin2, LOW);
   }
 
 }
@@ -127,4 +145,3 @@ void loop() {
   }
   dutyCycle = 200;
 */
-
